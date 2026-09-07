@@ -1,0 +1,17 @@
+{
+  "sourceZipSha256": "75e46eb4b197b9af3152693afd1f7448345b27dcf5edea2f0f7e27fc1102bb9a",
+  "sourcePdfSha256": "fdd43fd14cfefdeb04d245ccc6186596a2df0d67de82eb33f9e454c7253b4b02",
+  "validationCompleted": [
+    "source structure",
+    "825 records and point references",
+    "291 QR encode/decode",
+    "JavaScript syntax",
+    "XML parse"
+  ],
+  "validationPending": [
+    "GitHub Actions execution",
+    "Android compilation and lint",
+    "browser UI tests",
+    "APK install and device testing"
+  ]
+}
