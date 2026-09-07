@@ -1,0 +1,166 @@
+QUICK IDENTIFY EQUIPMENT — PATCH ANDROID OFFLINE v6.0
+Panduan upload manual GitHub dan pengujian APK
+
+HASIL YANG DISIAPKAN
+• UI, warna, dan logo mengikuti HTML Equipment Identify yang Anda berikan.
+• Database diambil ulang dari PDF Lubricant Database Processing Plant_2026-1.pdf:
+  825 baris, 291 nomor equipment, 11 halaman.
+• Equipment dan Lubrication Database dapat dibuka offline, tanpa login.
+• Pencarian, filter area/jenis pelumas, QR offline, baca QR dari foto galeri,
+  ekspor CSV, cetak label melalui dialog Android, backup dan pemulihan data teknis.
+• Seluruh komponen pelumasan ditampilkan, termasuk oil dan grease.
+• Field kosong tidak diisi dengan dugaan. 56 baris memiliki #DIV/0! atau #VALUE!
+  di PDF; error tersebut dipertahankan dan ditandai. 91 baris memiliki penanda
+  data kosong/error. Modifier DE/NDE dan halaman sumber ikut ditampilkan.
+• Data referensi PDF dilindungi dari perubahan manual. Data teknis tambahan dan
+  equipment tambahan tetap bisa disimpan. Kapasitas PDF bukan otomatis dosis top-up.
+
+STATUS VALIDASI
+Sudah dilakukan di sesi pembuatan: validasi 825 baris, keterkaitan seluruh titik
+ke equipment, kolom dan halaman sumber, aset lokal, sintaks JavaScript, XML,
+import PrintManager, serta encode/decode QR untuk seluruh 291 equipment.
+Belum dilakukan: kompilasi Android, Android lint, pengujian UI browser, pemasangan
+APK, dan pengujian pada HP. Lingkungan saat ini tidak menyediakan toolchain
+Android dan browser tidak dapat membuka server lokal. Workflow yang disertakan
+menjalankan pemeriksaan build, UI, lint, isi APK, dan signature di GitHub.
+Workflow belum dijalankan pada repository Anda; jangan menganggap status build
+lama sebagai hasil patch ini.
+
+CARA PALING MUDAH: HANYA DUA FILE DI REPOSITORY
+1. Quick_Identify_Android_Source.zip — di root/halaman utama repository.
+2. .github/workflows/build-quick-identify-apk.yml — workflow baru.
+
+A. SIAPKAN FILE
+1. Unduh Patch_Quick_Identify_Android_v6.zip.
+2. Ekstrak ZIP LUAR itu memakai Files di Android atau Extract All di Windows.
+3. Di dalamnya ada Quick_Identify_Android_Source.zip, folder .github, panduan ini,
+   WORKFLOW_SALIN_KE_GITHUB.txt, dan laporan pemeriksaan database.
+4. Untuk cara dua-file ini, JANGAN ekstrak Quick_Identify_Android_Source.zip.
+   Workflow akan mengekstraknya otomatis. JANGAN upload ZIP LUAR sebagai source.
+5. File ZIP source bukan APK dan tidak dapat diinstal di HP.
+
+B. UPLOAD ZIP SOURCE
+1. Buka GitHub lewat browser dan login ke akun Anda.
+2. Buka repository wahyusetiyonyoto-jpg/SLMS-Android-V5-project.
+   Repository tersebut belum dapat dibaca dari sesi ini (404), jadi pastikan
+   nama repository dan akses akun Anda benar. Bisa memakai repository baru.
+3. Pilih branch main pada tab Code. Untuk patch pertama, jangan hapus proyek lama.
+4. Dari HALAMAN UTAMA repository, pilih Add file > Upload files.
+   Di HP, gunakan menu browser > Situs desktop bila tombol tidak terlihat.
+5. Pilih Quick_Identify_Android_Source.zip. Nama harus persis, tanpa tambahan (1).
+6. Tulis pesan commit: Add Quick Identify offline Android source v6.
+7. Pilih Commit changes. Bila branch dilindungi, buat branch baru dan PR,
+   lalu gabungkan perubahan ke main sesuai aturan repository.
+8. Pastikan file terlihat langsung di root, bukan di folder app atau folder patch.
+
+C. BUAT WORKFLOW PEMBUAT APK
+1. Kembali ke halaman utama repository > Add file > Create new file.
+2. Pada nama file, ketik PERSIS:
+   .github/workflows/build-quick-identify-apk.yml
+   Tanda titik di depan .github wajib ada. GitHub akan membuat foldernya.
+3. Buka WORKFLOW_SALIN_KE_GITHUB.txt dari paket patch memakai editor teks.
+4. Salin SELURUH isinya ke editor GitHub. Jangan sertakan tanda ```.
+   Pertahankan spasi/indentasi; jangan mengganti spasi dengan tab.
+5. Tulis commit: Add Build Quick Identify APK workflow.
+6. Commit ke main. File workflow harus berada di branch default agar tombol
+   Run workflow muncul. Paket mendukung trigger push pada main maupun master.
+7. Alternatif laptop: upload file build-quick-identify-apk.yml dari folder
+   .github/workflows ke folder .github/workflows repository yang sudah ada.
+   Metode Create new file di atas paling jelas untuk menjaga path pada HP.
+
+D. JALANKAN BUILD
+1. Buka tab Actions.
+2. Pilih workflow bernama Build Quick Identify APK.
+   Ini workflow BARU, berbeda dari Build Android APK milik proyek lama.
+3. Bila belum berjalan otomatis, pilih Run workflow > branch main > Run workflow.
+4. Tunggu seluruh langkah selesai. Build pertama mengunduh SDK/Gradle/browser,
+   sehingga membutuhkan internet di runner GitHub dan dapat memakan beberapa menit.
+   HP hanya memerlukan internet untuk upload/download; aplikasi hasilnya offline.
+5. Hasil yang diharapkan: ikon centang hijau. Workflow melakukan:
+   - ekstraksi source;
+   - validasi data dan QR;
+   - pengujian UI pada ukuran layar 390 x 844 dan blok request eksternal;
+   - assembleDebug dan lintDebug;
+   - verifikasi tanda tangan APK, package ID, isi aset, dan tidak adanya izin INTERNET;
+   - pembuatan checksum SHA-256 dan informasi commit/run.
+6. Bila workflow merah, buka langkah merah untuk membaca error. Jangan mengunduh
+   APK dari workflow lama lalu menganggapnya versi baru. Unduh diagnostics bila ada,
+   atau kirim log langkah gagal agar perbaikannya tepat.
+
+E. AMBIL APK
+1. Buka run Build Quick Identify APK yang berstatus sukses.
+2. Pada bagian Artifacts, klik Quick-Identify-Equipment-APK-<nomor run>.
+3. Unduh lalu ekstrak arsip artifact. Masa simpan yang dikonfigurasi: 30 hari,
+   dapat lebih pendek bila repository/organisasi menerapkan batas sendiri.
+4. File yang diinstal adalah Quick_Identify_Equipment_Test.apk.
+5. File lainnya: signature-verification.txt, apk-information.txt, apk-permissions.txt,
+   output-metadata.json, build-info.json, SHA256SUMS.txt, laporan lint dan screenshot UI.
+6. build-info.json mencantumkan commit, run, versionCode, ukuran, dan checksum APK.
+   Untuk cek di Windows PowerShell:
+   Get-FileHash .\Quick_Identify_Equipment_Test.apk -Algorithm SHA256
+   Bandingkan hasil dengan SHA256SUMS.txt dari artifact yang sama.
+
+F. INSTAL DI ANDROID
+1. Pindahkan/unduh APK ke HP Android 8.0 atau lebih baru.
+2. Ketuk file .apk lewat Files/File Manager.
+3. Jika Android meminta, izinkan “Install unknown apps/Instal aplikasi tidak dikenal”
+   khusus untuk aplikasi yang membuka APK tersebut. Nama menu berbeda antar-HP.
+4. Pilih Instal, lalu Buka. Nama aplikasi: Quick Identify Equipment.
+5. APK ini ditandatangani menggunakan kunci KHUSUS TESTING yang disertakan dalam
+   source. Bukan release Play Store atau distribusi produksi.
+6. Package ID testing: com.wahyusn.quickidentify.offline.testing.
+   Karena identitas APK lama belum dapat diperiksa, versi testing memakai package
+   terpisah agar dapat dipasang berdampingan. Data APK lama tidak otomatis pindah.
+7. Antarbuild workflow yang sama, kunci testing dipertahankan dan versionCode naik
+   mengikuti nomor run. Jangan hapus data/uninstall hanya untuk memperbarui APK.
+   Buat backup sebelum upgrade. Jika signature/version konflik, simpan backup lalu
+   periksa package dan sertifikatnya lebih dulu.
+
+G. CHECKLIST UJI PENERIMAAN DI HP
+[ ] Aplikasi terbuka tanpa login; logo sesuai HTML.
+[ ] Aktifkan mode pesawat, tutup aplikasi sepenuhnya, lalu buka kembali.
+[ ] Equipment dan Lubrication Database tetap tampil; jumlah referensi 291/825.
+[ ] Cari 02-10CV007: GEARBOX memakai OMALA S2 GX 460 dan catatan MOC terlihat.
+[ ] Cari 03-10CP604: Roto Synthetic Fluid Xtend Duty, kapasitas 130 ltr,
+    error sumber #DIV/0! ditandai, bukan berubah menjadi 0.
+[ ] Filter area serta GREASE/OIL/THERMAL FLUID/GLYCERINE berjalan.
+[ ] Kartu menampilkan komponen oil dan grease, modifier dan halaman PDF.
+[ ] Buka QR equipment dan simpan PNG ke penyimpanan HP.
+[ ] Buka menu Baca QR dari Foto, pilih PNG tadi, equipment yang ditemukan sesuai.
+    Kamera tidak diperlukan; foto dapat diambil lebih dulu memakai kamera HP.
+[ ] Edit tahun pembuatan/data teknis; simpan, tutup paksa, buka lagi; perubahan ada.
+[ ] Simpan Backup; pulihkan backup tersebut; data teknis tetap ada.
+[ ] Export Database CSV berhasil disimpan dan dibuka di aplikasi spreadsheet.
+[ ] Cetak Label membuka dialog cetak Android; uji Save as PDF bila tersedia.
+[ ] Tombol Back menutup dialog/menu terlebih dulu; keluar aplikasi meminta konfirmasi.
+[ ] Coba portrait/landscape, keyboard pencarian, dan ukuran teks HP yang lebih besar.
+
+H. CATATAN DATABASE DAN PENYIMPANAN
+• PDF baru menjadi sumber referensi tunggal. Ada 31 tag pada PDF yang tidak ada
+  pada database HTML lama dan 33 tag lama yang tidak ada pada PDF baru. Daftar
+  lengkap ada di docs/database-audit.json. Jumlah total baris kebetulan sama.
+• Nomor seperti 02-80-PU620 dipertahankan sesuai PDF. Bukan diganti diam-diam.
+• Nilai PDF adalah data sumber pengguna; belum merupakan validasi engineering
+  atas kecocokan pelumas/dosis terhadap manual OEM. Gunakan catatan/MOC/OEM
+  untuk meninjau 91 baris bertanda sebelum dipakai sebagai instruksi pekerjaan.
+• Data teknis Android disimpan dalam file privat dengan penulisan atomik.
+  Backup manual diperlukan sebelum uninstall, clear data, atau pindah HP.
+• File export/backup dipilih lokasinya melalui pemilih penyimpanan Android.
+  Backup maksimal 8 MB; restore mempertahankan referensi PDF bawaan aplikasi.
+• Pemeriksaan browser pada workflow tidak menggantikan pengujian APK pada HP.
+
+I. MENGEMBANGKAN SOURCE (OPSIONAL UNTUK DEVELOPER)
+Ekstrak Quick_Identify_Android_Source.zip. Folder quick-identify-android berisi
+proyek Gradle mandiri, aset UI/data, Java wrapper, lisensi QR, dan tools pengujian.
+Buka folder tersebut di Android Studio. Toolchain: JDK 17, Gradle 8.11.1,
+Android Gradle Plugin 8.9.2, compile/target SDK 35, Build Tools 35.0.0.
+Workflow memakai Gradle yang disediakan setup-gradle, sehingga tidak bergantung
+pada gradlew/wrapper milik repository lama. Untuk terminal lokal, instal Gradle
+8.11.1 dan SDK yang sama, lalu jalankan gradle :app:assembleDebug :app:lintDebug.
+Untuk rilis produksi, gunakan package dan private signing key milik Anda;
+jangan memakai testing.keystore yang memang merupakan kunci uji publik.
+
+RUJUKAN CARA UPLOAD/BUILD
+https://docs.github.com/en/repositories/working-with-files/managing-files/adding-a-file-to-a-repository
+https://docs.github.com/actions/managing-workflow-runs/downloading-workflow-artifacts
+https://developer.android.com/build/releases/agp-8-9-0-release-notes
