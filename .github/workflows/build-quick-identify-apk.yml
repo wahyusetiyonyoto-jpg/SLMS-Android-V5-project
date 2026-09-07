@@ -1,1 +1,123 @@
 
+name: Build Quick Identify APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, master]
+    paths:
+      - 'Quick_Identify_Android_Source.zip'
+      - '.github/workflows/build-quick-identify-apk.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: qie-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      QIE_VERSION_CODE: ${{ github.run_number }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extract Android patch
+        shell: bash
+        run: |
+          test -f Quick_Identify_Android_Source.zip
+          python3 - <<'PY'
+          import zipfile
+          from pathlib import PurePosixPath
+          with zipfile.ZipFile('Quick_Identify_Android_Source.zip') as z:
+              for entry in z.namelist():
+                  p=PurePosixPath(entry)
+                  assert not p.is_absolute() and '..' not in p.parts, entry
+              z.extractall('.qie-build')
+          PY
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - name: Install Android SDK
+        run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate source data and offline QR
+        working-directory: .qie-build/quick-identify-android
+        run: |
+          python3 tools/verify_assets.py
+          node --check app/src/main/assets/app.js
+          node --check app/src/main/assets/native.js
+          node tools/test-qr.cjs
+      - name: Test mobile UI without external requests
+        working-directory: .qie-build/quick-identify-android
+        shell: bash
+        run: |
+          npm install --prefix .ui-tests --no-audit --no-fund --save-exact playwright@1.55.0
+          .ui-tests/node_modules/.bin/playwright install --with-deps chromium
+          python3 -m http.server 8765 --directory app/src/main/assets > /tmp/qie-http.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill "$SERVER_PID" || true' EXIT
+          for attempt in $(seq 1 20); do
+            if curl --fail --silent http://127.0.0.1:8765/index.html > /dev/null; then break; fi
+            sleep 1
+          done
+          NODE_PATH="$PWD/.ui-tests/node_modules" node tools/ui-test.cjs
+      - name: Build signed testing APK and run Android lint
+        working-directory: .qie-build/quick-identify-android
+        run: gradle --no-daemon --stacktrace :app:assembleDebug :app:lintDebug
+      - name: Verify APK signature and package
+        working-directory: .qie-build/quick-identify-android
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p deliverables
+          cp app/build/outputs/apk/debug/app-debug.apk deliverables/Quick_Identify_Equipment_Test.apk
+          cp app/build/outputs/apk/debug/output-metadata.json deliverables/
+          SDK_TOOLS="${ANDROID_HOME}/build-tools/35.0.0"
+          "$SDK_TOOLS/apksigner" verify --verbose --print-certs deliverables/Quick_Identify_Equipment_Test.apk > deliverables/signature-verification.txt
+          "$SDK_TOOLS/aapt" dump badging deliverables/Quick_Identify_Equipment_Test.apk > deliverables/apk-information.txt
+          "$SDK_TOOLS/aapt" dump permissions deliverables/Quick_Identify_Equipment_Test.apk > deliverables/apk-permissions.txt
+          grep -q "package: name='com.wahyusn.quickidentify.offline.testing'" deliverables/apk-information.txt
+          if grep -q 'android.permission.INTERNET' deliverables/apk-permissions.txt; then exit 1; fi
+          python3 - <<'PY'
+          import hashlib,json,os,zipfile
+          from pathlib import Path
+          apk=Path('deliverables/Quick_Identify_Equipment_Test.apk')
+          with zipfile.ZipFile(apk) as z:
+              assert z.testzip() is None
+              for name in ['index.html','app.js','data.js','database.json','logo.png','vendor/jsQR.js','vendor/qrcode.min.js']:
+                  path=Path('app/src/main/assets')/name
+                  assert z.read('assets/'+name)==path.read_bytes(), name
+          info={'commit':os.environ['GITHUB_SHA'],'run':os.environ['GITHUB_RUN_ID'],'versionCode':os.environ['QIE_VERSION_CODE'],'bytes':apk.stat().st_size,'sha256':hashlib.sha256(apk.read_bytes()).hexdigest(),'databaseRows':825,'equipment':291,'runtimeDeviceTest':'Manual Android testing still required'}
+          Path('deliverables/build-info.json').write_text(json.dumps(info,indent=2))
+          Path('deliverables/SHA256SUMS.txt').write_text(info['sha256']+'  '+apk.name+'\n')
+          PY
+          cp mobile-*.png deliverables/
+          cp app/build/reports/lint-results-debug.html deliverables/
+          cat deliverables/signature-verification.txt
+          cat deliverables/build-info.json
+      - name: Upload installable APK and verification report
+        uses: actions/upload-artifact@v4
+        with:
+          name: Quick-Identify-Equipment-APK-${{ github.run_number }}
+          path: .qie-build/quick-identify-android/deliverables/
+          if-no-files-found: error
+          retention-days: 30
+      - name: Upload diagnostics if a check fails
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Quick-Identify-Diagnostics-${{ github.run_number }}
+          path: |
+            .qie-build/quick-identify-android/mobile-*.png
+            .qie-build/quick-identify-android/app/build/reports/
+          if-no-files-found: ignore
